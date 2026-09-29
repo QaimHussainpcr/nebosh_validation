@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Certificate Verification</title>
+
+    <!-- Google reCAPTCHA -->
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 650px;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 35px rgba(0,0,0,.12);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            color: #222;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #777;
+        }
+
+        /* Result */
+
+        #result {
+            display: none;
+        }
+
+        .verified {
+            background: #198754;
+            color: white;
+            padding: 16px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .details {
+            border: 1px solid #ddd;
+            border-top: none;
+            padding: 20px;
+            border-radius: 0 0 10px 10px;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 14px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .row:last-child {
+            border-bottom: none;
+        }
+
+        .label {
+            font-weight: bold;
+            color: #555;
+        }
+
+        .value {
+            color: #222;
+            text-align: right;
+        }
+
+        .invalid {
+            display: none;
+            text-align: center;
+            color: #dc3545;
+            padding: 30px 10px;
+        }
+
+        /* CAPTCHA */
+
+        .captcha-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.65);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            z-index: 9999;
+        }
+
+        .captcha-box {
+            width: 100%;
+            max-width: 450px;
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 15px 50px rgba(0,0,0,.3);
+        }
+
+        .captcha-box h2 {
+            margin-bottom: 10px;
+            color: #222;
+        }
+
+        .captcha-box p {
+            color: #777;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+
+        .captcha {
+            display: flex;
+            justify-content: center;
+        }
+
+        .loading {
+            display: none;
+            margin-top: 15px;
+            color: #555;
+        }
+
+        @media(max-width:600px) {
+
+            .container {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 23px;
+            }
+
+            .row {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .value {
+                text-align: left;
+            }
+
+            .captcha-box {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h1>Certificate Verification</h1>
+        <p>Certificate verification result</p>
+    </div>
+
+    <!-- VALID CERTIFICATE -->
+
+    <div id="result">
+
+        <div class="verified">
+            ✓ Certificate Verified
+        </div>
+
+        <div class="details">
+
+            <div class="row">
+                <span class="label">Certificate No.</span>
+                <span class="value" id="certificateNo"></span>
+            </div>
+
+            <div class="row">
+                <span class="label">Name</span>
+                <span class="value" id="name"></span>
+            </div>
+
+            <div class="row">
+                <span class="label">Course</span>
+                <span class="value" id="course"></span>
+            </div>
+
+            <div class="row">
+                <span class="label">Issue Date</span>
+                <span class="value" id="issueDate"></span>
+            </div>
+
+            <div class="row">
+                <span class="label">Expiry Date</span>
+                <span class="value" id="expiryDate"></span>
+            </div>
+
+            <div class="row">
+                <span class="label">Status</span>
+                <span class="value" id="status"></span>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- INVALID -->
+
+    <div class="invalid" id="invalid">
+
+        <h2>Certificate Not Found</h2>
+
+        <p>
+            The certificate number is invalid or does not exist.
+        </p>
+
+    </div>
+
+</div>
+
+
+<!-- CAPTCHA -->
+
+<div class="captcha-modal" id="captchaModal">
+
+    <div class="captcha-box">
+
+        <h2>Security Verification</h2>
+
+        <p>
+            Please verify that you are not a robot
+            to continue.
+        </p>
+
+        <div class="captcha">
+
+            <!-- Replace YOUR_SITE_KEY -->
+
+            <div
+                class="g-recaptcha"
+                data-sitekey="YOUR_SITE_KEY"
+                data-callback="captchaSuccess">
+            </div>
+
+        </div>
+
+        <div class="loading" id="loading">
+            Verifying...
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    /*
+    ==========================================
+    CERTIFICATE DATA
+    NO DATABASE
+    ==========================================
+    */
+
+    const certificates = {
+
+        "CERT001": {
+            certificateNo: "CERT001",
+            name: "Muhammad Aslam",
+            course: "Safety Officer",
+            issueDate: "15 September 2026",
+            expiryDate: "15 September 2028",
+            status: "Valid"
+        },
+
+        "CERT002": {
+            certificateNo: "CERT002",
+            name: "Ali Khan",
+            course: "HSE Officer",
+            issueDate: "10 August 2026",
+            expiryDate: "10 August 2028",
+            status: "Valid"
+        },
+
+        "CERT003": {
+            certificateNo: "CERT003",
+            name: "Ahmed Hussain",
+            course: "Permit Receiver",
+            issueDate: "20 July 2026",
+            expiryDate: "20 July 2028",
+            status: "Valid"
+        }
+
+    };
+
+
+    /*
+    ==========================================
+    GET QR ID FROM URL
+    ==========================================
+    
+    QR should contain:
+
+    https://yourwebsite.com/?id=CERT001
+
+    */
+
+    const urlParams = new URLSearchParams(
+        window.location.search
+    );
+
+    const certificateID = urlParams.get("id");
+
+
+    /*
+    ==========================================
+    OPEN CAPTCHA
+    ==========================================
+    */
+
+    window.addEventListener("load", function() {
+
+        if (!certificateID) {
+
+            document.getElementById("invalid").style.display = "block";
+
+            return;
+        }
+
+        /*
+        Show CAPTCHA first
+        */
+
+        document.getElementById("captchaModal").style.display = "flex";
+
+    });
+
+
+    /*
+    ==========================================
+    CAPTCHA SUCCESS
+    ==========================================
+    */
+
+    function captchaSuccess(token) {
+
+        if (!token) {
+            return;
+        }
+
+        document.getElementById("loading").style.display = "block";
+
+        /*
+        Small delay for verification UI
+        */
+
+        setTimeout(function() {
+
+            document.getElementById("captchaModal").style.display = "none";
+
+            showCertificate();
+
+        }, 500);
+
+    }
+
+
+    /*
+    ==========================================
+    SHOW CERTIFICATE
+    ==========================================
+    */
+
+    function showCertificate() {
+
+        const certificate =
+            certificates[certificateID];
+
+        if (!certificate) {
+
+            document.getElementById("invalid").style.display = "block";
+
+            return;
+        }
+
+
+        document.getElementById("certificateNo").textContent =
+            certificate.certificateNo;
+
+        document.getElementById("name").textContent =
+            certificate.name;
+
+        document.getElementById("course").textContent =
+            certificate.course;
+
+        document.getElementById("issueDate").textContent =
+            certificate.issueDate;
+
+        document.getElementById("expiryDate").textContent =
+            certificate.expiryDate;
+
+        document.getElementById("status").textContent =
+            certificate.status;
+
+
+        document.getElementById("result").style.display = "block";
+
+    }
+
+</script>
+
+</body>
+</html>
