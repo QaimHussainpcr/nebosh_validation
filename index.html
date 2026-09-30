@@ -1,934 +1,698 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Certificate Verification</title>
-
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: Arial, Helvetica, sans-serif;
-        }
-
-        body {
-            min-height: 100vh;
-            background: #f3f4f6;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        /* =========================
-           MAIN CONTAINER
-        ========================= */
-
-        .container {
-            width: 100%;
-            max-width: 650px;
-            background: #ffffff;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.12);
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 25px;
-        }
-
-        .header h1 {
-            font-size: 28px;
-            color: #222;
-            margin-bottom: 8px;
-        }
-
-        .header p {
-            color: #777;
-            font-size: 15px;
-        }
-
-        /* =========================
-           RESULT
-        ========================= */
-
-        #result {
-            display: none;
-        }
-
-        .verified {
-            background: #198754;
-            color: white;
-            padding: 16px;
-            text-align: center;
-            border-radius: 10px 10px 0 0;
-            font-size: 20px;
-            font-weight: bold;
-        }
-
-        .details {
-            border: 1px solid #ddd;
-            border-top: none;
-            padding: 20px;
-            border-radius: 0 0 10px 10px;
-        }
-
-        .row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 20px;
-            padding: 14px 0;
-            border-bottom: 1px solid #eee;
-        }
-
-        .row:last-child {
-            border-bottom: none;
-        }
-
-        .label {
-            font-weight: bold;
-            color: #555;
-        }
-
-        .value {
-            color: #222;
-            text-align: right;
-        }
-
-        .status-valid {
-            color: #198754;
-            font-weight: bold;
-        }
-
-        /* =========================
-           INVALID
-        ========================= */
-
-        .invalid {
-            display: none;
-            text-align: center;
-            padding: 30px 10px;
-        }
-
-        .invalid h2 {
-            color: #dc3545;
-            margin-bottom: 10px;
-        }
-
-        .invalid p {
-            color: #777;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
-        /* =========================
-           MODAL
-        ========================= */
-
-        .captcha-modal {
-            position: fixed;
-            inset: 0;
-
-            background: rgba(0, 0, 0, 0.65);
-
-            display: none;
-
-            justify-content: center;
-            align-items: center;
-
-            padding: 20px;
-
-            z-index: 9999;
-        }
-
-        /* =========================
-           CAPTCHA BOX
-        ========================= */
-
-        .captcha-box {
-            width: 100%;
-            max-width: 560px;
-
-            background: #ffffff;
-
-            border-radius: 10px;
-
-            padding: 36px 30px;
-
-            text-align: center;
-
-            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.30);
-
-            animation: popup 0.25s ease;
-        }
-
-        @keyframes popup {
-            from {
-                opacity: 0;
-                transform: scale(0.95);
-            }
-
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        .captcha-box h2 {
-            font-size: 28px;
-            color: #222;
-            margin-bottom: 10px;
-        }
-
-        .captcha-box>p {
-            color: #777;
-            font-size: 15px;
-            margin-bottom: 30px;
-        }
-
-        /* =========================
-           CAPTCHA WIDGET
-        ========================= */
-
-        .captcha-widget {
-            width: 100%;
-            max-width: 378px;
-            height: 95px;
-
-            margin: 0 auto;
-
-            background: #fafafa;
-
-            border: 1px solid #d5d5d5;
-
-            border-radius: 2px;
-
-            box-shadow:
-                0 1px 2px rgba(0, 0, 0, 0.12);
-
-            display: flex;
-
-            align-items: center;
-
-            position: relative;
-
-            padding: 0 15px;
-        }
-
-        /* =========================
-           CHECKBOX
-        ========================= */
-
-        .captcha-checkbox {
-            width: 34px;
-            height: 34px;
-
-            border: 2px solid #555;
-
-            background: #ffffff;
-
-            flex-shrink: 0;
-
-            cursor: pointer;
-
-            display: flex;
-
-            align-items: center;
-            justify-content: center;
-
-            transition: 0.15s;
-        }
-
-        .captcha-checkbox:hover {
-            border-color: #222;
-        }
-
-        .captcha-checkbox.checked {
-            background: #198754;
-            border-color: #198754;
-        }
-
-        .captcha-check {
-            display: none;
-
-            color: #ffffff;
-
-            font-size: 23px;
-
-            font-weight: bold;
-        }
-
-        .captcha-checkbox.checked .captcha-check {
-            display: block;
-        }
-
-        /* =========================
-           CAPTCHA TEXT
-        ========================= */
-
-        .captcha-text {
-            margin-left: 17px;
-
-            font-size: 18px;
-
-            color: #222;
-
-            white-space: nowrap;
-
-            user-select: none;
-        }
-
-        /* =========================
-           DEMO SECURITY LOGO
-        ========================= */
-
-        .captcha-brand {
-            margin-left: auto;
-
-            width: 70px;
-
-            height: 75px;
-
-            display: flex;
-
-            flex-direction: column;
-
-            align-items: center;
-
-            justify-content: center;
-        }
-
-        .security-logo {
-            width: 42px;
-            height: 42px;
-
-            position: relative;
-        }
-
-        .captcha-logo {
-            width: 70px;
-            height: 70px;
-            object-fit: contain;
-            display: block;
-        }
-
-        /* Blue circular logo */
-
-        .logo-circle {
-            position: absolute;
-
-            width: 34px;
-            height: 34px;
-
-            border: 7px solid #4285f4;
-
-            border-right-color: transparent;
-
-            border-radius: 50%;
-
-            top: 4px;
-            left: 4px;
-
-            transform: rotate(-35deg);
-        }
-
-        /* Arrow */
-
-        .logo-arrow {
-            position: absolute;
-
-            width: 0;
-            height: 0;
-
-            border-top: 8px solid transparent;
-            border-bottom: 8px solid transparent;
-            border-left: 12px solid #4285f4;
-
-            right: 0;
-            top: 4px;
-
-            transform: rotate(15deg);
-        }
-
-        .brand-text {
-            font-size: 10px;
-
-            color: #666;
-
-            margin-top: 2px;
-        }
-
-        /* =========================
-           VERIFYING
-        ========================= */
-
-        .verifying {
-            display: none;
-
-            margin-top: 18px;
-
-            color: #555;
-
-            font-size: 14px;
-        }
-
-        .spinner {
-            width: 18px;
-            height: 18px;
-
-            border: 3px solid #ddd;
-
-            border-top-color: #198754;
-
-            border-radius: 50%;
-
-            display: inline-block;
-
-            vertical-align: middle;
-
-            margin-right: 7px;
-
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* =========================
-           DEMO LABEL
-        ========================= */
-
-        .demo-label {
-            margin-top: 20px;
-
-            font-size: 11px;
-
-            color: #999;
-
-            text-align: center;
-        }
-
-        /* =========================
-           MOBILE
-        ========================= */
-
-        @media (max-width: 600px) {
-
-            body {
-                padding: 12px;
-            }
-
-            .container {
-                padding: 20px;
-            }
-
-            .header h1 {
-                font-size: 23px;
-            }
-
-            .row {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 5px;
-            }
-
-            .value {
-                text-align: left;
-            }
-
-            .captcha-box {
-                padding: 30px 18px;
-            }
-
-            .captcha-box h2 {
-                font-size: 24px;
-            }
-
-            .captcha-widget {
-                height: 90px;
-                padding: 0 12px;
-            }
-
-            .captcha-text {
-                font-size: 16px;
-                margin-left: 13px;
-            }
-
-            .captcha-brand {
-                width: 60px;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Certificate Verification</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+    background: #fff;
+    min-height: 100vh;
+}
+
+/* =========================
+   PROGRESS BAR
+========================= */
+
+.progress-wrapper {
+    width: 100%;
+    padding: 55px 25px 35px;
+}
+
+.progress {
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.step {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.step:last-child {
+    flex: 0 auto;
+}
+
+.circle {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+
+    background: #777;
+    color: white;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 18px;
+    font-weight: bold;
+
+    flex-shrink: 0;
+}
+
+.step.active .circle {
+    background: #4359bd;
+}
+
+.step-label {
+    margin-left: 12px;
+    font-size: 18px;
+    color: #111;
+    white-space: nowrap;
+}
+
+.line {
+    height: 2px;
+    background: #c8c8c8;
+    flex: 1;
+    margin: 0 18px;
+}
+
+.line.active {
+    background: #4359bd;
+}
+
+/* =========================
+   MAIN CONTENT
+========================= */
+
+.content {
+    width: 100%;
+    max-width: 650px;
+    margin: 55px auto;
+    padding: 0 25px;
+}
+
+.page {
+    display: none;
+}
+
+.page.active {
+    display: block;
+}
+
+/* =========================
+   DISCLAIMER
+========================= */
+
+.disclaimer h2 {
+    text-align: center;
+    font-size: 23px;
+    margin-bottom: 75px;
+}
+
+.disclaimer p {
+    font-size: 16px;
+    font-weight: bold;
+    line-height: 1.35;
+    margin-bottom: 38px;
+}
+
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-top: 15px;
+}
+
+.checkbox {
+    width: 62px;
+    height: 25px;
+    background: #ccc;
+    border-radius: 20px;
+    position: relative;
+    cursor: pointer;
+}
+
+.checkbox-circle {
+    width: 27px;
+    height: 27px;
+    background: #222;
+    border-radius: 50%;
+
+    position: absolute;
+    left: 0;
+    top: -1px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    color: white;
+    font-size: 13px;
+}
+
+.checkbox.checked {
+    background: #4359bd;
+}
+
+.checkbox.checked .checkbox-circle {
+    left: 35px;
+    background: #4359bd;
+}
+
+.checkbox-text {
+    font-size: 17px;
+    line-height: 1.4;
+}
+
+/* =========================
+   BUTTON
+========================= */
+
+.button-area {
+    text-align: right;
+    margin-top: 15px;
+}
+
+.next-btn {
+    border: none;
+    background: #f3f4f6;
+    color: #777;
+
+    padding: 13px 20px;
+    border-radius: 8px;
+
+    font-size: 17px;
+    cursor: pointer;
+}
+
+.next-btn.enabled {
+    background: #4359bd;
+    color: white;
+}
+
+.next-btn:disabled {
+    cursor: not-allowed;
+}
+
+/* =========================
+   FORM
+========================= */
+
+.form-page h2 {
+    text-align: center;
+    margin-bottom: 45px;
+}
+
+.form-group {
+    margin-bottom: 22px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 13px;
+
+    border: 1px solid #ccc;
+    border-radius: 5px;
+
+    font-size: 16px;
+}
+
+.finished {
+    text-align: center;
+}
+
+.finished h2 {
+    color: #4359bd;
+    margin-bottom: 20px;
+}
+
+.finished p {
+    font-size: 17px;
+    line-height: 1.5;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media(max-width: 700px) {
+
+    .progress-wrapper {
+        padding: 30px 10px;
+    }
+
+    .step-label {
+        display: none;
+    }
+
+    .line {
+        margin: 0 8px;
+    }
+
+    .content {
+        margin-top: 30px;
+    }
+
+    .disclaimer h2 {
+        margin-bottom: 45px;
+    }
+
+    .checkbox-row {
+        align-items: flex-start;
+    }
+}
+</style>
 </head>
 
 <body>
 
-    <!-- =========================
-         MAIN CONTAINER
-    ========================= -->
 
-    <div class="container">
+<!-- =========================
+     PROGRESS
+========================= -->
 
-       
+<div class="progress-wrapper">
 
+    <div class="progress">
 
-        <!-- =========================
-             VALID CERTIFICATE
-        ========================= -->
+        <!-- STEP 1 -->
 
-        <div id="result">
+        <div class="step active" id="step1">
 
-            <div class="verified">
-                ✓ Certificate Verified
-            </div>
+            <div class="circle">1</div>
 
-            <div class="details">
-
-                <div class="row">
-
-                    <span class="label">
-                        Certificate No.
-                    </span>
-
-                    <span class="value" id="certificateNo">
-                    </span>
-
-                </div>
-
-
-                <div class="row">
-
-                    <span class="label">
-                        Name
-                    </span>
-
-                    <span class="value" id="name">
-                    </span>
-
-                </div>
-
-
-                <div class="row">
-
-                    <span class="label">
-                        Course
-                    </span>
-
-                    <span class="value" id="course">
-                    </span>
-
-                </div>
-
-
-                <div class="row">
-
-                    <span class="label">
-                        Issue Date
-                    </span>
-
-                    <span class="value" id="issueDate">
-                    </span>
-
-                </div>
-
-
-                <div class="row">
-
-                    <span class="label">
-                        Expiry Date
-                    </span>
-
-                    <span class="value" id="expiryDate">
-                    </span>
-
-                </div>
-
-
-                <div class="row">
-
-                    <span class="label">
-                        Status
-                    </span>
-
-                    <span class="value status-valid" id="status">
-                    </span>
-
-                </div>
-
+            <div class="step-label">
+                Disclaimer
             </div>
 
         </div>
 
 
-        <!-- =========================
-             INVALID CERTIFICATE
-        ========================= -->
+        <div class="line" id="line1"></div>
 
-        <div class="invalid" id="invalid">
 
-            <h2>
-                Certificate Not Found
-            </h2>
+        <!-- STEP 2 -->
 
-            <p>
-                The certificate number is invalid
-                or does not exist.
-            </p>
+        <div class="step" id="step2">
+
+            <div class="circle">2</div>
+
+            <div class="step-label">
+                Your Details
+            </div>
 
         </div>
 
-    </div>
+
+        <div class="line" id="line2"></div>
 
 
-    <!-- =========================
-         SECURITY MODAL
-    ========================= -->
+        <!-- STEP 3 -->
 
-    <div class="captcha-modal" id="captchaModal">
+        <div class="step" id="step3">
 
-        <div class="captcha-box">
+            <div class="circle">3</div>
 
-           
-
-
-            <!-- =========================
-                 CAPTCHA STYLE BOX
-            ========================= -->
-
-            <div class="captcha-widget">
-
-
-                <!-- CHECKBOX -->
-
-                <div class="captcha-checkbox" id="captchaCheckbox" onclick="verifyCaptcha()">
-
-                    <span class="captcha-check">
-                        ✓
-                    </span>
-
-                </div>
-
-
-                <!-- TEXT -->
-
-                <div class="captcha-text">
-                    I'm not a robot
-                </div>
-
-
-                <!-- LOGO -->
-
-                <div class="captcha-brand">
-                    <img src="./img/12.png" alt="Security" class="captcha-logo">
-
-                    <div class="brand-text">
-                        Security
-                    </div>
-                </div>
-
+            <div class="step-label">
+                Learner Details
             </div>
 
-
-            <!-- VERIFYING -->
-
-            <div class="verifying" id="verifying">
-
-                <span class="spinner"></span>
-
-                Verifying...
-
-            </div>
+        </div>
 
 
-            <div class="demo-label">
-                Demo Security Verification
+        <div class="line" id="line3"></div>
+
+
+        <!-- STEP 4 -->
+
+        <div class="step" id="step4">
+
+            <div class="circle">4</div>
+
+            <div class="step-label">
+                Finished
             </div>
 
         </div>
 
     </div>
 
+</div>
 
-    <script>
 
-        /* ==========================================
-           CERTIFICATE DATA
-        ========================================== */
 
-        const certificates = {
+<!-- =========================
+     CONTENT
+========================= -->
 
-            "CERT001": {
+<div class="content">
 
-                certificateNo: "CERT001",
 
-                name: "Muhammad Aslam",
+    <!-- =========================
+         STEP 1
+    ========================= -->
 
-                course: "Safety Officer",
+    <div
+        class="page disclaimer active"
+        id="page1">
 
-                issueDate: "15 September 2026",
+        <h2>
+            IMPORTANT, PLEASE READ BEFORE CONTINUING
+        </h2>
 
-                expiryDate: "15 September 2028",
 
-                status: "Valid"
+        <p>
+            We take the security of personal data and certificates
+            extremely seriously. As part of the verification process,
+            we will email the learner that was originally issued this
+            certificate to authenticate your request.
+        </p>
 
-            },
 
+        <p>
+            To allow the learner to identify who is requesting
+            information relating to them, your name and organisation
+            will be provided to the learner to allow them to authorise
+            your request.
+        </p>
 
-            "CERT002": {
 
-                certificateNo: "CERT002",
+        <p>
+            Your email address will be used by us to confirm the outcome
+            of your request within 2 working days of submission.
+        </p>
 
-                name: "Ali Khan",
 
-                course: "HSE Officer",
+        <p>
+            Please note: The outcome of this request will be recorded
+            and held by us for monitoring purposes. This includes your
+            name, organisation and email address. Please tick the box
+            below to confirm your acceptance or contact us.
+        </p>
 
-                issueDate: "10 August 2026",
 
-                expiryDate: "10 August 2028",
+        <div class="checkbox-row">
 
-                status: "Valid"
+            <div
+                class="checkbox"
+                id="acceptBox"
+                onclick="toggleAccept()">
 
-            },
+                <div class="checkbox-circle">
+                    -
+                </div>
 
+            </div>
 
-            "CERT003": {
 
-                certificateNo: "CERT003",
+            <div class="checkbox-text">
 
-                name: "Ahmed Hussain",
+                I confirm I am happy to store and use my details,
+                as detailed above. Tick box must be ticked to proceed.
 
-                course: "Permit Receiver",
+            </div>
 
-                issueDate: "20 July 2026",
+        </div>
 
-                expiryDate: "20 July 2028",
 
-                status: "Valid"
+        <div class="button-area">
 
-            }
+            <button
+                class="next-btn"
+                id="next1"
+                onclick="nextStep()"
+                disabled>
 
-        };
+                Next
 
+            </button>
 
-        /* ==========================================
-           GET ID FROM URL
-        ========================================== */
+        </div>
 
-        const urlParams =
-            new URLSearchParams(
-                window.location.search
-            );
+    </div>
 
 
-        const certificateID =
-            urlParams.get("id");
 
+    <!-- =========================
+         STEP 2
+    ========================= -->
 
-        /* ==========================================
-           PAGE LOAD
-        ========================================== */
+    <div
+        class="page form-page"
+        id="page2">
 
-        window.addEventListener(
-            "load",
-            function () {
+        <h2>
+            Your Details
+        </h2>
 
-                /*
-                    No certificate ID
-                */
 
-                if (!certificateID) {
+        <div class="form-group">
 
-                    document.getElementById(
-                        "invalid"
-                    ).style.display = "block";
+            <label>
+                Your Name
+            </label>
 
-                    return;
-                }
+            <input
+                type="text"
+                id="yourName"
+                placeholder="Enter your name">
 
+        </div>
 
-                /*
-                    Show security verification
-                */
 
-                document.getElementById(
-                    "captchaModal"
-                ).style.display = "flex";
+        <div class="form-group">
 
-            }
-        );
+            <label>
+                Organisation
+            </label>
 
+            <input
+                type="text"
+                id="organisation"
+                placeholder="Enter organisation">
 
-        /* ==========================================
-           DEMO CAPTCHA VERIFICATION
-        ========================================== */
+        </div>
 
-        function verifyCaptcha() {
 
-            const checkbox =
-                document.getElementById(
-                    "captchaCheckbox"
-                );
+        <div class="form-group">
 
+            <label>
+                Email Address
+            </label>
 
-            const verifying =
-                document.getElementById(
-                    "verifying"
-                );
+            <input
+                type="email"
+                id="email"
+                placeholder="Enter email">
 
+        </div>
 
-            /*
-                Prevent double click
-            */
 
-            checkbox.onclick = null;
+        <div class="button-area">
 
+            <button
+                class="next-btn enabled"
+                onclick="nextStep()">
 
-            /*
-                Tick checkbox
-            */
+                Next
 
-            checkbox.classList.add(
-                "checked"
-            );
+            </button>
 
+        </div>
 
-            /*
-                Show loading
-            */
+    </div>
 
-            verifying.style.display =
-                "block";
 
 
-            /*
-                Verification delay
-            */
+    <!-- =========================
+         STEP 3
+    ========================= -->
 
-            setTimeout(
-                function () {
+    <div
+        class="page form-page"
+        id="page3">
 
-                    document.getElementById(
-                        "captchaModal"
-                    ).style.display =
-                        "none";
+        <h2>
+            Learner Details
+        </h2>
 
 
-                    showCertificate();
+        <div class="form-group">
 
-                },
-                900
-            );
+            <label>
+                Learner Name
+            </label>
 
-        }
+            <input
+                type="text"
+                id="learnerName"
+                placeholder="Enter learner name">
 
+        </div>
 
-        /* ==========================================
-           SHOW CERTIFICATE
-        ========================================== */
 
-        function showCertificate() {
+        <div class="form-group">
 
-            const certificate =
-                certificates[certificateID];
-
-
-            /*
-                Certificate doesn't exist
-            */
-
-            if (!certificate) {
-
-                document.getElementById(
-                    "invalid"
-                ).style.display =
-                    "block";
-
-                return;
-            }
-
-
-            /*
+            <label>
                 Certificate Number
-            */
+            </label>
 
-            document.getElementById(
-                "certificateNo"
-            ).textContent =
-                certificate.certificateNo;
+            <input
+                type="text"
+                id="certificateNumber"
+                placeholder="Enter certificate number">
 
-
-            /*
-                Name
-            */
-
-            document.getElementById(
-                "name"
-            ).textContent =
-                certificate.name;
+        </div>
 
 
-            /*
-                Course
-            */
+        <div class="button-area">
 
-            document.getElementById(
-                "course"
-            ).textContent =
-                certificate.course;
+            <button
+                class="next-btn enabled"
+                onclick="nextStep()">
 
+                Next
 
-            /*
-                Issue Date
-            */
+            </button>
 
-            document.getElementById(
-                "issueDate"
-            ).textContent =
-                certificate.issueDate;
+        </div>
+
+    </div>
 
 
-            /*
-                Expiry Date
-            */
 
-            document.getElementById(
-                "expiryDate"
-            ).textContent =
-                certificate.expiryDate;
+    <!-- =========================
+         STEP 4
+    ========================= -->
 
+    <div
+        class="page finished"
+        id="page4">
 
-            /*
-                Status
-            */
-
-            document.getElementById(
-                "status"
-            ).textContent =
-                certificate.status;
+        <h2>
+            Finished
+        </h2>
 
 
-            /*
-                Show result
-            */
+        <p>
+            Your certificate verification request
+            has been submitted successfully.
+        </p>
 
-            document.getElementById(
-                "result"
-            ).style.display =
-                "block";
+    </div>
 
-        }
+</div>
 
-    </script>
+
+
+<script>
+
+let currentStep = 1;
+
+
+/* =========================
+   ACCEPT CHECKBOX
+========================= */
+
+function toggleAccept() {
+
+    const box =
+        document.getElementById("acceptBox");
+
+    const next =
+        document.getElementById("next1");
+
+    box.classList.toggle("checked");
+
+
+    if (box.classList.contains("checked")) {
+
+        box.querySelector(".checkbox-circle").textContent = "✓";
+
+        next.disabled = false;
+
+        next.classList.add("enabled");
+
+    } else {
+
+        box.querySelector(".checkbox-circle").textContent = "-";
+
+        next.disabled = true;
+
+        next.classList.remove("enabled");
+
+    }
+
+}
+
+
+/* =========================
+   NEXT STEP
+========================= */
+
+function nextStep() {
+
+    if (currentStep >= 4) {
+        return;
+    }
+
+
+    /* Hide current page */
+
+    document
+        .getElementById("page" + currentStep)
+        .classList.remove("active");
+
+
+    /* Current step becomes blue */
+
+    document
+        .getElementById("step" + currentStep)
+        .classList.add("active");
+
+
+    /* Move forward */
+
+    currentStep++;
+
+
+    /* Show next page */
+
+    document
+        .getElementById("page" + currentStep)
+        .classList.add("active");
+
+
+    /* Next step becomes blue */
+
+    document
+        .getElementById("step" + currentStep)
+        .classList.add("active");
+
+
+    /* Make previous connecting line blue */
+
+    if (currentStep > 1) {
+
+        document
+            .getElementById("line" + (currentStep - 1))
+            .classList.add("active");
+
+    }
+
+}
+
+</script>
 
 </body>
-
 </html>
