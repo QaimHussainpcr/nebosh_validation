@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -185,7 +186,7 @@
             margin-bottom: 10px;
         }
 
-        .captcha-box > p {
+        .captcha-box>p {
             color: #777;
             font-size: 15px;
             margin-bottom: 30px;
@@ -308,6 +309,13 @@
             height: 42px;
 
             position: relative;
+        }
+
+        .captcha-logo {
+            width: 42px;
+            height: 42px;
+            object-fit: contain;
+            display: block;
         }
 
         /* Blue circular logo */
@@ -501,9 +509,7 @@
                         Certificate No.
                     </span>
 
-                    <span
-                        class="value"
-                        id="certificateNo">
+                    <span class="value" id="certificateNo">
                     </span>
 
                 </div>
@@ -515,9 +521,7 @@
                         Name
                     </span>
 
-                    <span
-                        class="value"
-                        id="name">
+                    <span class="value" id="name">
                     </span>
 
                 </div>
@@ -529,9 +533,7 @@
                         Course
                     </span>
 
-                    <span
-                        class="value"
-                        id="course">
+                    <span class="value" id="course">
                     </span>
 
                 </div>
@@ -543,9 +545,7 @@
                         Issue Date
                     </span>
 
-                    <span
-                        class="value"
-                        id="issueDate">
+                    <span class="value" id="issueDate">
                     </span>
 
                 </div>
@@ -557,9 +557,7 @@
                         Expiry Date
                     </span>
 
-                    <span
-                        class="value"
-                        id="expiryDate">
+                    <span class="value" id="expiryDate">
                     </span>
 
                 </div>
@@ -571,9 +569,7 @@
                         Status
                     </span>
 
-                    <span
-                        class="value status-valid"
-                        id="status">
+                    <span class="value status-valid" id="status">
                     </span>
 
                 </div>
@@ -587,9 +583,7 @@
              INVALID CERTIFICATE
         ========================= -->
 
-        <div
-            class="invalid"
-            id="invalid">
+        <div class="invalid" id="invalid">
 
             <h2>
                 Certificate Not Found
@@ -609,9 +603,7 @@
          SECURITY MODAL
     ========================= -->
 
-    <div
-        class="captcha-modal"
-        id="captchaModal">
+    <div class="captcha-modal" id="captchaModal">
 
         <div class="captcha-box">
 
@@ -634,10 +626,7 @@
 
                 <!-- CHECKBOX -->
 
-                <div
-                    class="captcha-checkbox"
-                    id="captchaCheckbox"
-                    onclick="verifyCaptcha()">
+                <div class="captcha-checkbox" id="captchaCheckbox" onclick="verifyCaptcha()">
 
                     <span class="captcha-check">
                         ✓
@@ -656,19 +645,11 @@
                 <!-- LOGO -->
 
                 <div class="captcha-brand">
-
-                    <div class="security-logo">
-
-                        <div class="logo-arrow"></div>
-
-                        <div class="logo-circle"></div>
-
-                    </div>
+                    <img src="./img/12.png" alt="Security" class="captcha-logo">
 
                     <div class="brand-text">
                         Security
                     </div>
-
                 </div>
 
             </div>
@@ -676,9 +657,7 @@
 
             <!-- VERIFYING -->
 
-            <div
-                class="verifying"
-                id="verifying">
+            <div class="verifying" id="verifying">
 
                 <span class="spinner"></span>
 
@@ -968,4 +947,5 @@
     </script>
 
 </body>
+
 </html>
